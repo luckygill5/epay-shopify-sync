@@ -2,26 +2,33 @@ import { formatPrice, buildProductTitle } from "../lib/epay.js";
 import { convertToJpgBase64 } from "../lib/convert-image.js";
 
 
-
+let epay_id;
 /* ============================================================
    HELPERS
 ============================================================ */
 
 /**
- * Find existing product by epay_id metafield
+ * 🔒 STRICT product lookup by epay_id metafield
+ * Prevents accidental reuse of Gift Card
  */
 async function findProductByEpayId({ shop, token, version, epay_id }) {
   const query = `
   {
-    products(first: 1, query: "metafield:epay.epay_id=${epay_id}") {
+    products(first: 50) {
       edges {
         node {
           id
           handle
           variants(first: 1) {
             edges {
+              node { id }
+            }
+          }
+          metafields(namespace: "epay", first: 10) {
+            edges {
               node {
-                id
+                key
+                value
               }
             }
           }
@@ -43,16 +50,27 @@ async function findProductByEpayId({ shop, token, version, epay_id }) {
   );
 
   const data = await res.json();
-  const product = data?.data?.products?.edges?.[0]?.node;
 
-  if (!product) return null;
+  const products = data?.data?.products?.edges || [];
 
-  return {
-    product_id: product.id,
-    variant_id: product.variants.edges[0].node.id,
-    product_handle: product.handle,
-  };
+  for (const { node } of products) {
+    const epayMeta = node.metafields.edges.find(
+      (m) => m.node.key === "epay_id" && m.node.value === epay_id
+    );
+
+    if (epayMeta) {
+      return {
+        product_id: node.id,
+        variant_id: node.variants.edges[0].node.id,
+        product_handle: node.handle,
+      };
+    }
+  }
+
+  return null;
 }
+
+
 
 /* ============================================================
    API HANDLER
@@ -70,17 +88,23 @@ export default async function handler(req, res) {
   try {
     /* ================== INPUT ================== */
     const {
-      epay_id,
+      name,
+      ean,
       provider,
       amount,
       shortDesc,
       longDesc,
       image,
+      currencyIso,
+      currencySymbol
     } = req.body;
 
-    if (!epay_id) {
+    if (!ean) {
       return res.status(400).json({ error: "Missing epay_id" });
     }
+
+        // 🔒 epay_id is ALWAYS EAN (never product name)
+     epay_id = ean.toString().trim();
 
     /* ================== ENV ================== */
     const {
@@ -110,6 +134,15 @@ export default async function handler(req, res) {
     /* ============================================================
        2️⃣ CREATE PRODUCT
     ============================================================ */
+
+    function buildProductHandle(epay_id, provider) {
+  return `${epay_id}-${provider}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+     console.log("product create call"); 
     const createRes = await fetch(
       `https://${SHOPIFY_SHOP}/admin/api/${SHOPIFY_API_VERSION}/products.json`,
       {
@@ -120,16 +153,19 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           product: {
-            title: buildProductTitle(epay_id, provider),
+            title: `${name} - ${provider}`,
+             handle:buildProductHandle(epay_id, provider),
             status: "active",
-            vendor: provider || "ePay",
-            product_type: "Digital",
+            vendor: provider,
+            product_type: "Digital Code",
+            published:true,
             body_html: longDesc || shortDesc || "",
             variants: [
               {
                 price: formatPrice(amount),
                 inventory_management: null,
                 requires_shipping: false,
+                taxable:true,
               },
             ],
             metafields: [
@@ -139,6 +175,18 @@ export default async function handler(req, res) {
                 type: "single_line_text_field",
                 value: epay_id,
               },
+              {
+                  namespace: "epay",
+                  key: "currency_iso",
+                  type: "single_line_text_field",
+                  value: currencyIso, // e.g. AED, SAR, ZAR
+                },
+                {
+                  namespace: "epay",
+                  key: "currency_symbol",
+                  type: "single_line_text_field",
+                  value: currencySymbol, // e.g. د.إ , ر.س , R
+                }
             ],
           },
         }),
@@ -146,11 +194,13 @@ export default async function handler(req, res) {
     );
 
     const created = await createRes.json();
+     
     if (!createRes.ok) throw created;
-
+ console.log("created data:",created); 
     const productId = created.product.id;
     const variantId = created.product.variants[0].id;
     const handle = created.product.handle;
+  console.log("🟣handleID-2:",handle); 
 const base64Image = await convertToJpgBase64(image);
 console.log("🟣 base64Image length:", base64Image?.length);
 
