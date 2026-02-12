@@ -205,43 +205,6 @@ export default async function handler(req, res) {
      5️⃣ REAL ePay response (example)
   -------------------------------------------------- */
 
-//   const epayResponse =  {
-//   "success": true,
-//   "provider": "epay",
-//   "type": "SALE",
-//   "terminalId": "93889617",
-//   "transaction": {
-//     "txId": "Sale_93889617_20260129030413",
-//     "hostTxId": "Sale_93889617_20260129030413",
-//     "localDateTime": "2026-01-29 15:04:13",
-//     "serverDateTime": "2026-01-29 09:34:22",
-//     "amount": 6500,
-//     "currency": "OMR",
-//     "limit": 993500,
-//     "resultCode": 0,
-//     "resultText": "transaction successful"
-//   },
-//   "product": {
-//     "name": "Xbox Live Gift Card - 15 USD",
-//     "brand": "Microsoft Xbox (Oman)"
-//   },
-//   "pinCredentials": {
-//     "pin": "56Q08-CWXY5-71A34-68B44-3WE18",
-//     "serial": "70260129103422192166",
-//     "validTo": "3000-01-01 00:00:00"
-//   },
-//   "receiptLines": [
-//     "Microsoft Xbox (Oman)",
-//     "Xbox Live Gift Card - 15 USD",
-//     "TerminalID: 93889617",
-//     "OMR 6.500",
-//     "Time: 2026-01-29 13:34:22",
-//     "Serial number: 70260129103422192166",
-//     "Code: 56Q08-CWXY5-71A34-68B44-3WE18"
-//   ]
-// }
-
-//   console.log("saveepayData--", orderId, epayResponse)
 
   try {
     // 1️⃣ Call ePay
