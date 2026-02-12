@@ -1,8 +1,19 @@
-import { formatPrice, buildProductTitle } from "../lib/epay.js";
 import { convertToJpgBase64 } from "../lib/convert-image.js";
 
 
 let epay_id;
+
+function formatPrice(amount) {
+  const value = Number(amount);
+
+  if (Number.isNaN(value) || value <= 0) {
+    throw new Error(`Invalid epay amount: ${amount}`);
+  }
+
+  return (value / 100).toFixed(2);
+}
+
+
 /* ============================================================
    HELPERS
 ============================================================ */
@@ -163,6 +174,7 @@ export default async function handler(req, res) {
             variants: [
               {
                 price: formatPrice(amount),
+                sku: epay_id, 
                 inventory_management: null,
                 requires_shipping: false,
                 taxable:true,
