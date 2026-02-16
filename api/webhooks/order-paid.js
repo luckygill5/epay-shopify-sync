@@ -28,8 +28,18 @@ import { XMLParser } from "fast-xml-parser";
 
 function getDateTimeFormat (){
   let date =  new Date().toISOString().slice(0, 10);
-  let time  = new Date().toLocaleTimeString().replace(' AM', '').replace(' PM', '');
-  console.log('timedata',  date+" "+time)
+  let Localtime  = new Date().toLocaleTimeString().replace(' AM', '').replace(' PM', '');
+  console.log("Localtime--", Localtime)
+  let time;
+  var hours = new Date().getHours(); 
+  hours = (hours < 10 ? '0' : '') + hours;
+  var min = new Date().getMinutes(); 
+  min = (min < 10 ? '0' : '') + min;
+  var sec = new Date().getSeconds(); 
+  sec = (sec < 10 ? '0' : '') + sec;
+  time = `${hours}:${min}:${sec}`;
+
+  console.log('timedata',  date+" "+time);
   return date+" "+time
 }
 

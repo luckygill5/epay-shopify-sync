@@ -214,6 +214,7 @@ export default async function handler(req, res) {
     const handle = created.product.handle;
   console.log("🟣handleID-2:",handle); 
 const base64Image = await convertToJpgBase64(image);
+console.log("🟣 base64Image:", base64Image);
 console.log("🟣 base64Image length:", base64Image?.length);
 
     /* ============================================================
